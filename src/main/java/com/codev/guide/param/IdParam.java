@@ -2,10 +2,12 @@ package com.codev.guide.param;
 
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 @Data
 public class IdParam implements Serializable {
 
-    private Integer id;
+    @NotNull
+    private Long id;
 }

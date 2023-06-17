@@ -3,41 +3,38 @@ package com.codev.guide.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
-import org.joda.time.DateTime;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.Date;
 
 @Data
-public class ProductInfo {
+public class Software {
 
     /**
      * 主键自增
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
     /**
-     * 文件名
+     * title
      */
     @NotBlank
     private String title;
 
     /**
-     * oss name
-     */
-    @NotBlank
-    private String name;
-
-    /**
-     * 文件url
+     * url
      */
     @NotBlank
     private String url;
+
+    /**
+     * 版本号
+     */
+    @NotBlank
+    private String version;
 
     /**
      * 上传日期
@@ -46,25 +43,18 @@ public class ProductInfo {
     private LocalDate date;
 
     /**
-     * 新增日期
+     * 版本说明
      */
-    @NotNull
-    private Timestamp dateTime;
-
-    /**
-     * 查看次数
-     */
-    private Long referenceTimes;
+    private String note;
 
     /**
      * 下载次数
      */
-    private Long downloadTimes;
+    private Long times;
 
     /**
-     * 类型
+     * 与software_menu表id匹配
      */
     @NotNull
     private Integer type;
-
 }

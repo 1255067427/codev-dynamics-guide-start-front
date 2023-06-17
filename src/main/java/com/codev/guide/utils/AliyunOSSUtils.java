@@ -37,7 +37,7 @@ public class AliyunOSSUtils {
      * @param hours       过期时间   单位小时
      * @Author zhaoweifeng
      */
-    public String uploadImage(String objectName,
+    public String upload(String objectName,
                               byte[] content, String contentType, int hours) throws Exception {
         // 创建OSSClient实例。
         OSS ossClient = new OSSClientBuilder().build(endPoint, keyId, keySecret);

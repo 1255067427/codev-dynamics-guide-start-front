@@ -3,46 +3,35 @@ package com.codev.guide.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
+import org.joda.time.DateTime;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDate;
+import java.util.Date;
 
 @Data
-public class Videos {
+public class SoftwareMenu {
 
     /**
      * 主键自增
      */
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
     /**
-     * 视频title
+     * name
      */
     @NotBlank
-    private String title;
+    private String name;
 
     /**
-     * 视频url
-     */
-    @NotBlank
-    private String url;
-
-    /**
-     * 上传日期
+     * 新增日期
      */
     @NotNull
-    private LocalDate date;
+    private Date date;
 
     /**
-     * 播放次数
-     */
-    private Long times;
-
-    /**
-     * 视频类型
+     * type：1Drone；2Aviato；3Desktop
      */
     @NotNull
     private Integer type;

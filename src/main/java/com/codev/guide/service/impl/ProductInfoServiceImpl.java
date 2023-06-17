@@ -4,12 +4,16 @@ import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
+import com.aliyun.oss.model.ResponseHeaderOverrides;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.codev.guide.entity.ProductInfo;
 import com.codev.guide.mapper.ProductInfoMapper;
-import com.codev.guide.param.PageParam;
+import com.codev.guide.param.productinfo.ProductInfoEditParam;
+import com.codev.guide.param.productinfo.ProductInfoParam;
+import com.codev.guide.param.TypeParam;
+import com.codev.guide.param.productinfo.ProductInfoSearchParam;
 import com.codev.guide.service.ProductInfoService;
 import com.codev.guide.utils.AliyunOSSUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.net.URL;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.Date;
 
 @Service
@@ -32,19 +38,19 @@ public class ProductInfoServiceImpl implements ProductInfoService {
     /**
      * 分页查询sheet
      *
-     * @param pageParam
+     * @param typeParam
      * @return
      */
     @Override
-    public IPage<ProductInfo> sheetList(PageParam pageParam) {
+    public IPage<ProductInfo> list(TypeParam typeParam) {
 
-        IPage<ProductInfo> page = new Page<>(pageParam.getPageNum(), pageParam.getPageSize());
+        IPage<ProductInfo> page = new Page<>(typeParam.getPageNum(), typeParam.getPageSize());
 
         QueryWrapper<ProductInfo> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("type", 1);
+        queryWrapper.eq("type", typeParam.getType()).orderByDesc("date_time");
         IPage<ProductInfo> productInfoEntityIPage = productInfoMapper.selectPage(page, queryWrapper);
 
-        log.info("ProductInfoServiceImpl.sheetList([pageParam])业务已结束，结果：{}", productInfoEntityIPage.getRecords());
+        log.info("ProductInfoServiceImpl.list([pageParam])业务已结束，结果：{}", productInfoEntityIPage.getRecords());
         return productInfoEntityIPage;
     }
 
@@ -55,24 +61,20 @@ public class ProductInfoServiceImpl implements ProductInfoService {
      * @return
      */
     @Override
-    public URL sheetReference(Long id) {
+    public String reference(Long id) {
 
         QueryWrapper<ProductInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", id);
         ProductInfo productInfo = productInfoMapper.selectOne(queryWrapper);
         String url = productInfo.getUrl();
-        String fileName = url.substring(url.lastIndexOf("/") + 1).replace("%20", " ");
+//        String fileName = url.replace("%20", " ");
+        StringBuilder reverse = new StringBuilder().append(url).reverse();
+        String substring = reverse.substring(reverse.indexOf("?") + 1);
+        StringBuilder newStringBuilder = new StringBuilder().append(substring);
+        String result = newStringBuilder.reverse().toString();
 
-        OSS ossClient = new OSSClientBuilder().build(aliyunOSSUtils.getEndPoint(), aliyunOSSUtils.getKeyId(), aliyunOSSUtils.getKeySecret());
-
-        // 验证URL访问是否直接下载。
-        Date expiration = new Date(System.currentTimeMillis() + 3600 * 1000);
-        GeneratePresignedUrlRequest signRequest = new GeneratePresignedUrlRequest(aliyunOSSUtils.getBucketName(), fileName, HttpMethod.GET);
-        signRequest.setExpiration(expiration);
-        URL signedUrl = ossClient.generatePresignedUrl(signRequest);
-
-        log.info("ProductInfoServiceImpl.sheetReference([id])业务已结束，结果：{}", signedUrl);
-        return signedUrl;
+        log.info("ProductInfoServiceImpl.reference([id])业务已结束，结果：{}", result);
+        return result;
     }
 
     /**
@@ -82,13 +84,136 @@ public class ProductInfoServiceImpl implements ProductInfoService {
      * @return
      */
     @Override
-    public String sheetDownload(Long id) {
+    public URL download(Long id) {
         QueryWrapper<ProductInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", id);
         ProductInfo productInfo = productInfoMapper.selectOne(queryWrapper);
-        String url = productInfo.getUrl();
 
-        log.info("ProductInfoServiceImpl.sheetDownload([id])业务已结束，结果：{}", url);
-        return url;
+        OSS ossClient = new OSSClientBuilder().build(aliyunOSSUtils.getEndPoint(), aliyunOSSUtils.getKeyId(), aliyunOSSUtils.getKeySecret());
+
+        Date expiration = new Date(System.currentTimeMillis() + 3600 * 1000);
+        // 打开链接查看，不会自动下载
+        GeneratePresignedUrlRequest signRequest = new GeneratePresignedUrlRequest(aliyunOSSUtils.getBucketName(), productInfo.getName(), HttpMethod.GET);
+        ResponseHeaderOverrides responseHeaders = new ResponseHeaderOverrides();
+        responseHeaders.setContentDisposition("attachment;");
+        signRequest.setResponseHeaders(responseHeaders);
+
+        signRequest.setExpiration(expiration);
+        URL signedUrl = ossClient.generatePresignedUrl(signRequest);
+
+        log.info("ProductInfoServiceImpl.download([id])业务已结束，结果：{}", signedUrl);
+        return signedUrl;
+    }
+
+    /**
+     * 新增produtinfo
+     *
+     * @param productInfoParam
+     * @return
+     */
+    @Override
+    public int add(ProductInfoParam productInfoParam) {
+
+        ProductInfo productInfo = new ProductInfo();
+        productInfo.setTitle(productInfoParam.getTitle());
+        productInfo.setUrl(productInfoParam.getUrl());
+        LocalDate date = LocalDate.now();
+        productInfo.setDate(date);
+        Timestamp dateTime = new Timestamp(System.currentTimeMillis());
+        productInfo.setDateTime(dateTime);
+        productInfo.setReferenceTimes(0L);
+        productInfo.setDownloadTimes(0L);
+        productInfo.setType(productInfoParam.getType());
+        productInfo.setName(productInfoParam.getName());
+
+        int result = productInfoMapper.insert(productInfo);
+
+        log.info("ProductInfoServiceImpl.add([productInfoParam])业务已结束，结果：{}", result);
+        return result;
+    }
+
+    /**
+     * 根据id删除productinfo
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public int delete(Long id) {
+
+        int result = productInfoMapper.deleteById(id);
+
+        log.info("ProductInfoServiceImpl.delete([id])业务已结束，结果：{}", result);
+        return result;
+    }
+
+    /**
+     * 根据id回显productinfo
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public ProductInfo echo(Long id) {
+
+        QueryWrapper<ProductInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("id", id);
+
+        ProductInfo productInfo = productInfoMapper.selectOne(queryWrapper);
+
+        log.info("ProductInfoServiceImpl.echo([id])业务已结束，结果：{}", productInfo);
+        return productInfo;
+    }
+
+    /**
+     * 根据id修改productinfo
+     *
+     * @param productInfoEditParam
+     * @return
+     */
+    @Override
+    public int edit(ProductInfoEditParam productInfoEditParam) {
+
+        QueryWrapper<ProductInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("id", productInfoEditParam.getId());
+
+        ProductInfo productInfo = productInfoMapper.selectOne(queryWrapper);
+        productInfo.setTitle(productInfoEditParam.getTitle());
+
+        int result = productInfoMapper.updateById(productInfo);
+
+        return result;
+    }
+
+    /**
+     * 根据title搜索productinfo
+     * 为空则查找全部
+     *
+     * @param productInfoSearchParam
+     * @return
+     */
+    @Override
+    public IPage<ProductInfo> search(ProductInfoSearchParam productInfoSearchParam) {
+
+        IPage<ProductInfo> page = new Page<>(productInfoSearchParam.getPageNum(), productInfoSearchParam.getPageSize());
+        QueryWrapper<ProductInfo> queryWrapper = new QueryWrapper<>();
+
+        if (!productInfoSearchParam.getTitle().isEmpty() && productInfoSearchParam.getTitle() != null) {
+
+            queryWrapper.eq("type", productInfoSearchParam.getType())
+                    .like("title", productInfoSearchParam.getTitle())
+                    .orderByDesc("date_time");
+            IPage<ProductInfo> productInfoEntityIPage = productInfoMapper.selectPage(page, queryWrapper);
+
+            log.info("ProductInfoServiceImpl.search([productInfoSearchParam])业务已结束，结果：{}", productInfoEntityIPage.getRecords());
+            return productInfoEntityIPage;
+        }
+
+        queryWrapper.eq("type", productInfoSearchParam.getType())
+                .orderByDesc("date_time");
+        IPage<ProductInfo> productInfoEntityIPage = productInfoMapper.selectPage(page, queryWrapper);
+
+        log.info("ProductInfoServiceImpl.search([productInfoSearchParam])业务已结束，结果：{}", productInfoEntityIPage.getRecords());
+        return productInfoEntityIPage;
     }
 }
