@@ -14,6 +14,7 @@ import com.codev.guide.param.productinfo.ProductInfoEditParam;
 import com.codev.guide.param.productinfo.ProductInfoParam;
 import com.codev.guide.param.TypeParam;
 import com.codev.guide.param.productinfo.ProductInfoSearchParam;
+import com.codev.guide.param.productinfo.ProductInfoTypeParam;
 import com.codev.guide.service.ProductInfoService;
 import com.codev.guide.utils.AliyunOSSUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -38,16 +39,16 @@ public class ProductInfoServiceImpl implements ProductInfoService {
     /**
      * 分页查询sheet
      *
-     * @param typeParam
+     * @param productInfoTypeParam
      * @return
      */
     @Override
-    public IPage<ProductInfo> list(TypeParam typeParam) {
+    public IPage<ProductInfo> list(ProductInfoTypeParam productInfoTypeParam) {
 
-        IPage<ProductInfo> page = new Page<>(typeParam.getPageNum(), typeParam.getPageSize());
+        IPage<ProductInfo> page = new Page<>(productInfoTypeParam.getPageNum(), productInfoTypeParam.getPageSize());
 
         QueryWrapper<ProductInfo> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("type", typeParam.getType()).orderByDesc("date_time");
+        queryWrapper.eq("type", productInfoTypeParam.getType()).orderByDesc("date_time");
         IPage<ProductInfo> productInfoEntityIPage = productInfoMapper.selectPage(page, queryWrapper);
 
         log.info("ProductInfoServiceImpl.list([pageParam])业务已结束，结果：{}", productInfoEntityIPage.getRecords());
@@ -66,12 +67,17 @@ public class ProductInfoServiceImpl implements ProductInfoService {
         QueryWrapper<ProductInfo> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", id);
         ProductInfo productInfo = productInfoMapper.selectOne(queryWrapper);
+
+        // 获取阿里云url
         String url = productInfo.getUrl();
-//        String fileName = url.replace("%20", " ");
         StringBuilder reverse = new StringBuilder().append(url).reverse();
         String substring = reverse.substring(reverse.indexOf("?") + 1);
         StringBuilder newStringBuilder = new StringBuilder().append(substring);
         String result = newStringBuilder.reverse().toString();
+
+        // 查阅次数+1
+        productInfo.setReferenceTimes(productInfo.getReferenceTimes() + 1);
+        productInfoMapper.updateById(productInfo);
 
         log.info("ProductInfoServiceImpl.reference([id])业务已结束，结果：{}", result);
         return result;
@@ -89,10 +95,9 @@ public class ProductInfoServiceImpl implements ProductInfoService {
         queryWrapper.eq("id", id);
         ProductInfo productInfo = productInfoMapper.selectOne(queryWrapper);
 
+        // 获取阿里云url
         OSS ossClient = new OSSClientBuilder().build(aliyunOSSUtils.getEndPoint(), aliyunOSSUtils.getKeyId(), aliyunOSSUtils.getKeySecret());
-
         Date expiration = new Date(System.currentTimeMillis() + 3600 * 1000);
-        // 打开链接查看，不会自动下载
         GeneratePresignedUrlRequest signRequest = new GeneratePresignedUrlRequest(aliyunOSSUtils.getBucketName(), productInfo.getName(), HttpMethod.GET);
         ResponseHeaderOverrides responseHeaders = new ResponseHeaderOverrides();
         responseHeaders.setContentDisposition("attachment;");
@@ -100,6 +105,10 @@ public class ProductInfoServiceImpl implements ProductInfoService {
 
         signRequest.setExpiration(expiration);
         URL signedUrl = ossClient.generatePresignedUrl(signRequest);
+
+        // 下载次数+1
+        productInfo.setDownloadTimes(productInfo.getDownloadTimes() + 1);
+        productInfoMapper.updateById(productInfo);
 
         log.info("ProductInfoServiceImpl.download([id])业务已结束，结果：{}", signedUrl);
         return signedUrl;
@@ -179,9 +188,14 @@ public class ProductInfoServiceImpl implements ProductInfoService {
 
         ProductInfo productInfo = productInfoMapper.selectOne(queryWrapper);
         productInfo.setTitle(productInfoEditParam.getTitle());
+        LocalDate date = LocalDate.now();
+        productInfo.setDate(date);
+        Timestamp dateTime = new Timestamp(System.currentTimeMillis());
+        productInfo.setDateTime(dateTime);
 
         int result = productInfoMapper.updateById(productInfo);
 
+        log.info("ProductInfoServiceImpl.edit([productInfoEditParam])业务已结束，结果：{}",result);
         return result;
     }
 

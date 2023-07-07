@@ -6,6 +6,7 @@ import com.codev.guide.param.productinfo.ProductInfoEditParam;
 import com.codev.guide.param.productinfo.ProductInfoParam;
 import com.codev.guide.param.TypeParam;
 import com.codev.guide.param.productinfo.ProductInfoSearchParam;
+import com.codev.guide.param.productinfo.ProductInfoTypeParam;
 import com.codev.guide.service.ProductInfoService;
 import com.codev.guide.utils.AliyunOSSUtils;
 import com.codev.guide.utils.R;
@@ -36,13 +37,13 @@ public class ProductInfoController {
     /**
      * 分页查询sheet
      *
-     * @param typeParam
+     * @param productInfoTypeParam
      * @return
      */
     @PostMapping("/list")
-    public R list(@RequestBody TypeParam typeParam) {
+    public R list(@RequestBody ProductInfoTypeParam productInfoTypeParam) {
 
-        IPage<ProductInfo> list = productInfoService.list(typeParam);
+        IPage<ProductInfo> list = productInfoService.list(productInfoTypeParam);
 
         return R.ok(list);
     }

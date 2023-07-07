@@ -1,11 +1,11 @@
-package com.codev.guide.param.productinfo;
+package com.codev.guide.param.videos;
 
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
 
 @Data
-public class ProductInfoSearchParam {
+public class VideosSearchParam {
 
     @NotNull
     private Integer pageNum = 1;

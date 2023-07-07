@@ -7,6 +7,7 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 
 @Data
@@ -25,6 +26,12 @@ public class Videos {
     private String title;
 
     /**
+     * oss name
+     */
+    @NotBlank
+    private String name;
+
+    /**
      * 视频url
      */
     @NotBlank
@@ -37,9 +44,15 @@ public class Videos {
     private LocalDate date;
 
     /**
+     * 新增日期
+     */
+    @NotNull
+    private Timestamp dateTime;
+
+    /**
      * 播放次数
      */
-    private Long times;
+    private Long referenceTimes;
 
     /**
      * 视频类型

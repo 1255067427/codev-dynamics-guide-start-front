@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.codev.guide.entity.ProductInfo;
 import com.codev.guide.param.productinfo.ProductInfoEditParam;
 import com.codev.guide.param.productinfo.ProductInfoParam;
-import com.codev.guide.param.TypeParam;
 import com.codev.guide.param.productinfo.ProductInfoSearchParam;
+import com.codev.guide.param.productinfo.ProductInfoTypeParam;
 
 import java.net.URL;
 
@@ -15,10 +15,10 @@ public interface ProductInfoService {
     /**
      * 分页查询sheet
      *
-     * @param typeParam
+     * @param productInfoTypeParam
      * @return
      */
-    IPage<ProductInfo> list(TypeParam typeParam);
+    IPage<ProductInfo> list(ProductInfoTypeParam productInfoTypeParam);
 
     /**
      * 根据id查阅文件

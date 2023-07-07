@@ -7,6 +7,8 @@ import org.joda.time.DateTime;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.Date;
 
 @Data
@@ -25,10 +27,16 @@ public class SoftwareMenu {
     private String name;
 
     /**
+     * 上传日期
+     */
+    @NotNull
+    private LocalDate date;
+
+    /**
      * 新增日期
      */
     @NotNull
-    private Date date;
+    private Timestamp dateTime;
 
     /**
      * type：1Drone；2Aviato；3Desktop
